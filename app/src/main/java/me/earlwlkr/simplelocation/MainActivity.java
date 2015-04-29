@@ -89,7 +89,7 @@ public class MainActivity extends FragmentActivity implements
                         break;
                     }
                     case 1: {
-                        if (mStartPos.getClass() == LatLng.class) {
+                        if (mStartPos != null) {
                             openPlacePicker(PICK_SECOND_PLACE);
                         }
                         break;
@@ -119,6 +119,11 @@ public class MainActivity extends FragmentActivity implements
         try {
             // This will call onActivityResult with requestCode specified when finished.
             startActivityForResult(builder.build(context), req);
+            if (req == PICK_FIRST_PLACE) {
+                Toast.makeText(this, "Hãy chọn điểm khởi hành", Toast.LENGTH_LONG).show();
+            } else if (req == PICK_SECOND_PLACE) {
+                Toast.makeText(this, "Hãy chọn điểm đến", Toast.LENGTH_LONG).show();
+            }
         } catch (GooglePlayServicesRepairableException e) {
             Toast.makeText(this, e.getMessage(), Toast.LENGTH_LONG).show();
         } catch (GooglePlayServicesNotAvailableException e) {
@@ -144,106 +149,22 @@ public class MainActivity extends FragmentActivity implements
         setContentView(R.layout.layout_map);
         mMap = ((SupportMapFragment) getSupportFragmentManager()
                         .findFragmentById(R.id.map)).getMap();
-        String url = getMapsApiDirectionsUrl();
-        ReadTask downloadTask = new ReadTask();
-        downloadTask.execute(url);
 
+        new ShortestRouteFinder(mStartPos, mDestPos, mMap).findShortestRoute();
         mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(mStartPos, 17));
         addMarkers();
-    }
-
-    private String getMapsApiDirectionsUrl() {
-        String waypoints = "origin="
-                + mStartPos.latitude + "," + mStartPos.longitude
-                + "&destination=" + mDestPos.latitude + ","
-                + mDestPos.longitude;
-
-        String sensor = "sensor=false";
-        String params = waypoints + "&" + sensor;
-        String output = "json";
-        String url = "https://maps.googleapis.com/maps/api/directions/"
-                + output + "?" + params;
-        Toast.makeText(this, url, Toast.LENGTH_LONG).show();
-        return url;
     }
 
     private void addMarkers() {
         if (mMap != null) {
             mMap.addMarker(new MarkerOptions().position(mStartPos)
-                    .title("Điểm bắt đầu"));
+                    .title("Điểm khởi hành"));
             mMap.addMarker(new MarkerOptions()
                     .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_GREEN))
                     .position(mDestPos)
-                    .title("Điểm kết thúc"));
+                    .title("Điểm đến"));
         }
     }
 
-    private class ReadTask extends AsyncTask<String, Void, String> {
-        @Override
-        protected String doInBackground(String... url) {
-            String data = "";
-            try {
-                HttpConnection http = new HttpConnection();
-                data = http.readUrl(url[0]);
-            } catch (Exception e) {
-                Log.d("Background Task", e.toString());
-            }
-            return data;
-        }
 
-        @Override
-        protected void onPostExecute(String result) {
-            super.onPostExecute(result);
-            new ParserTask().execute(result);
-        }
-    }
-    private class ParserTask extends
-            AsyncTask<String, Integer, List<List<HashMap<String, String>>>> {
-
-        @Override
-        protected List<List<HashMap<String, String>>> doInBackground(
-                String... jsonData) {
-
-            JSONObject jObject;
-            List<List<HashMap<String, String>>> routes = null;
-
-            try {
-                jObject = new JSONObject(jsonData[0]);
-                PathJSONParser parser = new PathJSONParser();
-                routes = parser.parse(jObject);
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-            return routes;
-        }
-
-        @Override
-        protected void onPostExecute(List<List<HashMap<String, String>>> routes) {
-            ArrayList<LatLng> points = null;
-            PolylineOptions polyLineOptions = null;
-
-            // traversing through routes
-            for (int i = 0; i < routes.size(); i++) {
-                points = new ArrayList<LatLng>();
-                polyLineOptions = new PolylineOptions();
-                List<HashMap<String, String>> path = routes.get(i);
-
-                for (int j = 0; j < path.size(); j++) {
-                    HashMap<String, String> point = path.get(j);
-
-                    double lat = Double.parseDouble(point.get("lat"));
-                    double lng = Double.parseDouble(point.get("lng"));
-                    LatLng position = new LatLng(lat, lng);
-
-                    points.add(position);
-                }
-
-                polyLineOptions.addAll(points);
-                polyLineOptions.width(5);
-                polyLineOptions.color(Color.BLUE);
-            }
-
-            mMap.addPolyline(polyLineOptions);
-        }
-    }
 }
