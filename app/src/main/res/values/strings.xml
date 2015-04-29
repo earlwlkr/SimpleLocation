@@ -2,6 +2,6 @@
     <string name="app_name">SimpleLocation</string>
 
     <string name="hello_world">Hello world!</string>
-    <string name="current_pos_label">Địa điểm hiện tại:</string>
+    <string name="current_pos_label">Địa điểm tìm thấy lần cuối:</string>
     <string name="current_pos_loading">Đang tải dữ liệu...</string>
 </resources>

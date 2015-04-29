@@ -5,34 +5,63 @@
     android:paddingTop="@dimen/activity_vertical_margin"
     android:paddingBottom="@dimen/activity_vertical_margin" tools:context=".MainActivity">
 
-    <ListView
-        android:layout_width="wrap_content"
+    <android.support.v7.widget.CardView
+        xmlns:card_view="http://schemas.android.com/apk/res-auto"
+        android:id="@+id/card_view"
+        android:layout_gravity="center"
+        android:layout_width="fill_parent"
         android:layout_height="wrap_content"
-        android:id="@+id/mainMenu"
-        android:layout_alignParentTop="true"
-        android:layout_alignParentLeft="true"
-        android:layout_alignParentStart="true" />
+        card_view:cardCornerRadius="4dp">
 
-    <TextView
-        android:layout_width="fill_parent"
-        android:layout_height="26dp"
-        android:gravity="center"
-        android:text="@string/current_pos_label"
-        android:id="@+id/currentPosLabel"
-        android:layout_below="@+id/mainMenu"
-        android:layout_marginTop="@dimen/activity_vertical_margin"
-        android:textStyle="bold"
-        android:textColor="#ff3d3d3d"
-        android:textSize="18sp" />
+        <ListView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:id="@+id/mainMenu"
+            android:layout_alignParentTop="true"
+            android:layout_alignParentLeft="true"
+            android:layout_alignParentStart="true"
+            android:paddingBottom="10dp" />
+    </android.support.v7.widget.CardView>
 
-    <TextView
+    <android.support.v7.widget.CardView
+        xmlns:card_view="http://schemas.android.com/apk/res-auto"
+        android:id="@+id/card_view_2"
+        android:layout_gravity="center"
         android:layout_width="fill_parent"
-        android:layout_height="40dp"
-        android:gravity="center"
-        android:text="@string/current_pos_loading"
-        android:id="@+id/currentPosText"
-        android:layout_below="@+id/currentPosLabel"
-        android:textColor="#ff3d3d3d"
-        android:textSize="14sp" />
+        android:layout_height="150dp"
+        android:layout_below="@+id/card_view"
+        android:layout_marginTop="20dp"
+        card_view:cardCornerRadius="4dp"
+        card_view:cardBackgroundColor="@android:color/holo_blue_bright">
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
+            <TextView
+                android:layout_width="fill_parent"
+                android:layout_height="40dp"
+                android:gravity="center"
+                android:text="@string/current_pos_label"
+                android:id="@+id/currentPosLabel"
+                android:textStyle="bold"
+                android:textColor="#ff3d3d3d"
+                android:textSize="18sp"
+                android:background="@android:color/holo_green_light" />
+
+            <TextView
+                android:layout_width="fill_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center"
+                android:text="@string/current_pos_loading"
+                android:id="@+id/currentPosText"
+                android:layout_below="@+id/currentPosLabel"
+                android:textColor="#ff3d3d3d"
+                android:textSize="14sp"
+                android:paddingTop="10dp" />
+        </LinearLayout>
+
+    </android.support.v7.widget.CardView>
+
 
 </RelativeLayout>
