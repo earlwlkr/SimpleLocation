@@ -1,28 +1,33 @@
 package me.earlwlkr.simplelocation;
 
+import android.app.Dialog;
+import android.content.ContentResolver;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
+import android.database.Cursor;
 import android.location.Address;
 import android.location.Geocoder;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
+import android.net.Uri;
 import android.os.Bundle;
-import android.provider.Telephony;
+import android.provider.ContactsContract;
+import android.support.v4.app.DialogFragment;
 import android.support.v4.app.FragmentActivity;
+import android.support.v7.app.AlertDialog;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
+import android.support.v7.app.AppCompatDialog;
 
-import com.google.android.gms.common.ConnectionResult;
+import com.afollestad.materialdialogs.AlertDialogWrapper;
 import com.google.android.gms.common.GooglePlayServicesNotAvailableException;
 import com.google.android.gms.common.GooglePlayServicesRepairableException;
-import com.google.android.gms.common.api.GoogleApiClient;
-import com.google.android.gms.location.LocationRequest;
-import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.location.places.ui.PlacePicker;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
@@ -32,8 +37,12 @@ import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.MarkerOptions;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 
 
 public class MainActivity extends FragmentActivity {
@@ -44,6 +53,7 @@ public class MainActivity extends FragmentActivity {
     private LatLng mStartPos;
     private LatLng mDestPos;
     private GoogleMap mMap;
+    private LinkedHashMap<String, String> mContactAddresses;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -102,14 +112,81 @@ public class MainActivity extends FragmentActivity {
                         break;
                     }
                     case 2: {
-                        if (mStartPos.getClass() == LatLng.class) {
-                            // ...
+                        if (mStartPos != null) {
+                            // Get contacts.
+                            mContactAddresses = new LinkedHashMap<String, String>();
+                            Uri uri = ContactsContract.CommonDataKinds.StructuredPostal.CONTENT_URI;
+                            String[] projection = new String[] {
+                                    ContactsContract.Contacts._ID,
+                                    ContactsContract.Contacts.DISPLAY_NAME,
+                                    ContactsContract.CommonDataKinds.Phone.NUMBER,
+                                    ContactsContract.CommonDataKinds.StructuredPostal.FORMATTED_ADDRESS
+                            };
+                            Cursor cur = getContentResolver().query(uri, projection, null, null, null);
+                            if (cur.getCount() > 0) {
+                                while (cur.moveToNext()) {
+                                    int colIndex = cur.getColumnIndex(
+                                            ContactsContract.CommonDataKinds.StructuredPostal.FORMATTED_ADDRESS);
+                                    if (colIndex != -1) {
+                                        String contactAddress = cur.getString(colIndex);
+                                        String contactName = cur.getString(cur.getColumnIndex(ContactsContract.Contacts.DISPLAY_NAME));
+                                        mContactAddresses.put(contactName, contactAddress);
+                                    }
+                                }
+                            }
+
+                            DialogFragment newFragment = new ChooseContactDialog();
+                            newFragment.show(getSupportFragmentManager(), "Contacts");
                         }
                         break;
                     }
                 }
             }
         });
+    }
+
+    private class ChooseContactDialog extends DialogFragment {
+        @Override
+        public Dialog onCreateDialog(Bundle savedInstanceState) {
+            AlertDialogWrapper.Builder builder = new AlertDialogWrapper.Builder(getActivity());
+            String[] list = new String[mContactAddresses.size()];
+            int i = 0;
+            for (Map.Entry<String, String> entry : mContactAddresses.entrySet()) {
+                String key = entry.getKey();
+                String value = entry.getValue();
+                list[i++] = (key + "\nĐịa chỉ: " + value + "\n");
+            }
+            builder.setTitle("Chọn contact")
+                    .setItems(list, new DialogInterface.OnClickListener() {
+                        public void onClick(DialogInterface dialog, int which) {
+                            String addr = (new ArrayList<String>(mContactAddresses.values())).get(which);
+                            mDestPos = getLocationFromAddress(addr);
+                            if (mDestPos == null) {
+                                Toast.makeText(getApplicationContext(),
+                                        "Không thể lấy tọa độ điểm đến",
+                                        Toast.LENGTH_LONG).show();
+                            } else {
+                                drawRoute();
+                            }
+                        }
+                    });
+            return builder.create();
+        }
+    }
+
+    public LatLng getLocationFromAddress(String strAddress) {
+        Geocoder geocoder = new Geocoder(this, Locale.getDefault());
+        List<Address> address;
+        try {
+            address = geocoder.getFromLocationName(strAddress, 1);
+            if (address.size() > 0) {
+                Address location = address.get(0);
+                return new LatLng(location.getLatitude(), location.getLongitude());
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return null;
     }
 
     private String getAddressFromLocation(Location loc) {
@@ -167,8 +244,10 @@ public class MainActivity extends FragmentActivity {
 
     private void drawRoute() {
         setContentView(R.layout.layout_map);
-        mMap = ((SupportMapFragment) getSupportFragmentManager()
-                        .findFragmentById(R.id.map)).getMap();
+        if (mMap == null) {
+            mMap = ((SupportMapFragment) getSupportFragmentManager()
+                    .findFragmentById(R.id.map)).getMap();
+        }
 
         new ShortestRouteFinder(mStartPos, mDestPos, mMap).findShortestRoute();
         mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(mStartPos, 17));
