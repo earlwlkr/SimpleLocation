@@ -50,24 +50,18 @@ public class MainActivity extends FragmentActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        LocationManager mLocationManager = (LocationManager) getSystemService(LOCATION_SERVICE);
-        Location location = mLocationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
+        LocationManager locationManager = (LocationManager) getSystemService(LOCATION_SERVICE);
+        Location location = locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
         if (location == null) {
-            mLocationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 200l, 500.0f, new LocationListener() {
+            locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 200l, 500.0f, new LocationListener() {
                 @Override
-                public void onStatusChanged(String provider, int status, Bundle extras) {
-
-                }
+                public void onStatusChanged(String provider, int status, Bundle extras) {}
 
                 @Override
-                public void onProviderEnabled(String provider) {
-
-                }
+                public void onProviderEnabled(String provider) {}
 
                 @Override
-                public void onProviderDisabled(String provider) {
-
-                }
+                public void onProviderDisabled(String provider) {}
 
                 @Override
                 public void onLocationChanged(final Location location) {
@@ -78,24 +72,10 @@ public class MainActivity extends FragmentActivity {
             });
         }
         if (location != null) {
-            Geocoder geocoder = new Geocoder(this, Locale.getDefault());
-            List<Address> addresses = null;
-            try {
-                addresses = geocoder.getFromLocation(location.getLatitude(), location.getLongitude(), 1);
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
+            String addressText = getAddressFromLocation(location);
             TextView text = (TextView) findViewById(R.id.currentPosText);
-            // Get the most accurate address.
-            Address address = addresses.get(0);
-            // Build address string.
-            StringBuilder sb = new StringBuilder();
-            for (int i = 0; i < address.getMaxAddressLineIndex(); i++) {
-                sb.append(address.getAddressLine(i)).append("\n");
-            }
-            sb.append(address.getCountryName());
-            String addressText = sb.toString();
             text.setText(addressText);
+            mStartPos = new LatLng(location.getLatitude(), location.getLongitude());
         }
 
 
@@ -130,6 +110,27 @@ public class MainActivity extends FragmentActivity {
                 }
             }
         });
+    }
+
+    private String getAddressFromLocation(Location loc) {
+        Geocoder geocoder = new Geocoder(this, Locale.getDefault());
+        List<Address> addresses = null;
+        try {
+            addresses = geocoder.getFromLocation(loc.getLatitude(), loc.getLongitude(), 1);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        // Get the most accurate address.
+        Address address = addresses.get(0);
+        // Build address string.
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < address.getMaxAddressLineIndex(); i++) {
+            sb.append(address.getAddressLine(i)).append("\n");
+        }
+        sb.append(address.getCountryName());
+        String addressText = sb.toString();
+        return addressText;
     }
 
     private void openPlacePicker(int req) {
