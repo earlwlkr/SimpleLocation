@@ -2,23 +2,26 @@ package me.earlwlkr.simplelocation;
 
 import android.content.Context;
 import android.content.Intent;
-import android.graphics.Color;
+import android.location.Address;
+import android.location.Geocoder;
 import android.location.Location;
+import android.location.LocationListener;
+import android.location.LocationManager;
 import android.os.Bundle;
+import android.provider.Telephony;
 import android.support.v4.app.FragmentActivity;
-import android.util.Log;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
-import android.os.AsyncTask;
 
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.GooglePlayServicesNotAvailableException;
 import com.google.android.gms.common.GooglePlayServicesRepairableException;
 import com.google.android.gms.common.api.GoogleApiClient;
+import com.google.android.gms.location.LocationRequest;
 import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.location.places.ui.PlacePicker;
 import com.google.android.gms.maps.CameraUpdateFactory;
@@ -27,17 +30,13 @@ import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.MarkerOptions;
-import com.google.android.gms.maps.model.PolylineOptions;
 
-import org.json.JSONObject;
-
-import java.util.ArrayList;
-import java.util.HashMap;
+import java.io.IOException;
 import java.util.List;
+import java.util.Locale;
 
 
-public class MainActivity extends FragmentActivity implements
-        GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener {
+public class MainActivity extends FragmentActivity {
 
     final int PICK_FIRST_PLACE = 1;
     final int PICK_SECOND_PLACE = 2;
@@ -45,32 +44,60 @@ public class MainActivity extends FragmentActivity implements
     private LatLng mStartPos;
     private LatLng mDestPos;
     private GoogleMap mMap;
-    private GoogleApiClient mGoogleApiClient;
-
-    @Override
-    public void onConnected(Bundle bundle) {
-        Location mLastLocation = LocationServices.FusedLocationApi.getLastLocation(
-                mGoogleApiClient);
-        mStartPos = new LatLng(mLastLocation.getLatitude(), mLastLocation.getLongitude());
-        TextView text = (TextView) findViewById(R.id.currentPosText);
-        text.setText(mStartPos.toString());
-    }
-
-    @Override
-    public void onConnectionSuspended(int i) {
-
-    }
-
-    @Override
-    public void onConnectionFailed(ConnectionResult connectionResult) {
-
-    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        buildGoogleApiClient();
+
+        LocationManager mLocationManager = (LocationManager) getSystemService(LOCATION_SERVICE);
+        Location location = mLocationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
+        if (location == null) {
+            mLocationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 200l, 500.0f, new LocationListener() {
+                @Override
+                public void onStatusChanged(String provider, int status, Bundle extras) {
+
+                }
+
+                @Override
+                public void onProviderEnabled(String provider) {
+
+                }
+
+                @Override
+                public void onProviderDisabled(String provider) {
+
+                }
+
+                @Override
+                public void onLocationChanged(final Location location) {
+                    mStartPos = new LatLng(location.getLatitude(), location.getLongitude());
+                    TextView text = (TextView) findViewById(R.id.currentPosText);
+                    text.setText(mStartPos.toString());
+                }
+            });
+        }
+        if (location != null) {
+            Geocoder geocoder = new Geocoder(this, Locale.getDefault());
+            List<Address> addresses = null;
+            try {
+                addresses = geocoder.getFromLocation(location.getLatitude(), location.getLongitude(), 1);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            TextView text = (TextView) findViewById(R.id.currentPosText);
+            // Get the most accurate address.
+            Address address = addresses.get(0);
+            // Build address string.
+            StringBuilder sb = new StringBuilder();
+            for (int i = 0; i < address.getMaxAddressLineIndex(); i++) {
+                sb.append(address.getAddressLine(i)).append("\n");
+            }
+            sb.append(address.getCountryName());
+            String addressText = sb.toString();
+            text.setText(addressText);
+        }
+
 
         final ListView listview = (ListView) findViewById(R.id.mainMenu);
         String[] values = new String[] { "Tìm đường đi ngắn nhất giữa 2 vị trí", "Tìm đường đi từ vị trí hiện tại" +
@@ -103,14 +130,6 @@ public class MainActivity extends FragmentActivity implements
                 }
             }
         });
-    }
-
-    protected synchronized void buildGoogleApiClient() {
-        mGoogleApiClient = new GoogleApiClient.Builder(this)
-                .addConnectionCallbacks(this)
-                .addOnConnectionFailedListener(this)
-                .addApi(LocationServices.API)
-                .build();
     }
 
     private void openPlacePicker(int req) {
