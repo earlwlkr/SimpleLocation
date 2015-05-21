@@ -24,12 +24,7 @@ import com.afollestad.materialdialogs.AlertDialogWrapper;
 import com.google.android.gms.common.GooglePlayServicesNotAvailableException;
 import com.google.android.gms.common.GooglePlayServicesRepairableException;
 import com.google.android.gms.location.places.ui.PlacePicker;
-import com.google.android.gms.maps.CameraUpdateFactory;
-import com.google.android.gms.maps.GoogleMap;
-import com.google.android.gms.maps.SupportMapFragment;
-import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
-import com.google.android.gms.maps.model.MarkerOptions;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -44,7 +39,6 @@ public class MainActivity extends FragmentActivity {
 
     private LatLng mStartPos;
     private LatLng mDestPos;
-    private GoogleMap mMap;
     private LinkedHashMap<String, String> mContactAddresses;
 
     @Override
@@ -211,26 +205,13 @@ public class MainActivity extends FragmentActivity {
     }
 
     private void drawRoute() {
-        setContentView(R.layout.layout_map);
-        if (mMap == null) {
-            mMap = ((SupportMapFragment) getSupportFragmentManager()
-                    .findFragmentById(R.id.map)).getMap();
-        }
-
-        new ShortestRouteFinder(mStartPos, mDestPos, mMap).findShortestRoute();
-        // Center camera to start position.
-        mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(mStartPos, 17));
-        addMarkers();
-    }
-
-    private void addMarkers() {
-        if (mMap != null) {
-            mMap.addMarker(new MarkerOptions().position(mStartPos)
-                    .title("Điểm khởi hành"));
-            mMap.addMarker(new MarkerOptions()
-                    .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_GREEN))
-                    .position(mDestPos)
-                    .title("Điểm đến"));
-        }
+        Intent i = new Intent(getApplicationContext(), MapResultActivity.class);
+        Bundle bundle = new Bundle();
+        bundle.putDouble("startLat", mStartPos.latitude);
+        bundle.putDouble("startLong", mStartPos.longitude);
+        bundle.putDouble("destLat", mDestPos.latitude);
+        bundle.putDouble("destLong", mDestPos.longitude);
+        i.putExtras(bundle);
+        startActivity(i);
     }
 }

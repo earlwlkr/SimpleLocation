@@ -4,4 +4,6 @@
     <string name="hello_world">Hello world!</string>
     <string name="current_pos_label">Địa điểm tìm thấy lần cuối:</string>
     <string name="current_pos_loading">Đang tải dữ liệu...</string>
+    <string name="title_activity_map_result">MapResultActivity</string>
+    <string name="action_settings">Settings</string>
 </resources>
