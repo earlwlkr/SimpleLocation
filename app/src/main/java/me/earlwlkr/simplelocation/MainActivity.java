@@ -100,6 +100,10 @@ public class MainActivity extends FragmentActivity {
                     case 1: {
                         if (mStartPos != null) {
                             openPlacePicker(PICK_SECOND_PLACE);
+                        } else {
+                            Toast.makeText(getApplicationContext(),
+                                    "Chưa tìm được vị trí được xác định gần đây nhất",
+                                    Toast.LENGTH_LONG).show();
                         }
                         break;
                     }
@@ -133,6 +137,10 @@ public class MainActivity extends FragmentActivity {
 
                             DialogFragment newFragment = new ChooseContactDialog();
                             newFragment.show(getSupportFragmentManager(), "Contacts");
+                        } else {
+                            Toast.makeText(getApplicationContext(),
+                                    "Chưa tìm được vị trí được xác định gần đây nhất",
+                                    Toast.LENGTH_LONG).show();
                         }
                         break;
                     }
