@@ -3,7 +3,6 @@ package me.earlwlkr.simplelocation;
 import android.graphics.Color;
 import android.os.AsyncTask;
 import android.util.Log;
-import android.widget.Toast;
 
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.model.LatLng;
@@ -52,11 +51,9 @@ public class ShortestRouteFinder {
                 + "&destination=" + mDestPos.latitude + ","
                 + mDestPos.longitude;
 
-        String sensor = "sensor=false";
-        String params = waypoints + "&" + sensor;
         String output = "json";
         String url = "https://maps.googleapis.com/maps/api/directions/"
-                + output + "?" + params;
+                + output + "?" + waypoints;
         return url;
     }
 
