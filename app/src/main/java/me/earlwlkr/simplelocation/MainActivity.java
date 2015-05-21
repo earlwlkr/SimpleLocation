@@ -1,13 +1,10 @@
 package me.earlwlkr.simplelocation;
 
 import android.app.Dialog;
-import android.content.ContentResolver;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.database.Cursor;
-import android.location.Address;
-import android.location.Geocoder;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
@@ -16,14 +13,12 @@ import android.os.Bundle;
 import android.provider.ContactsContract;
 import android.support.v4.app.DialogFragment;
 import android.support.v4.app.FragmentActivity;
-import android.support.v7.app.AlertDialog;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
-import android.support.v7.app.AppCompatDialog;
 
 import com.afollestad.materialdialogs.AlertDialogWrapper;
 import com.google.android.gms.common.GooglePlayServicesNotAvailableException;
@@ -36,13 +31,10 @@ import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.MarkerOptions;
 
-import java.io.IOException;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Locale;
 import java.util.Map;
+
 
 
 public class MainActivity extends FragmentActivity {
@@ -82,7 +74,7 @@ public class MainActivity extends FragmentActivity {
             });
         }
         if (location != null) {
-            String addressText = getAddressFromLocation(location);
+            String addressText = Utils.getAddressFromLocation(getApplicationContext(), location);
             TextView text = (TextView) findViewById(R.id.currentPosText);
             text.setText(addressText);
             mStartPos = new LatLng(location.getLatitude(), location.getLongitude());
@@ -116,18 +108,22 @@ public class MainActivity extends FragmentActivity {
                             // Get contacts.
                             mContactAddresses = new LinkedHashMap<String, String>();
                             Uri uri = ContactsContract.CommonDataKinds.StructuredPostal.CONTENT_URI;
+                            // Declare the fields to get.
                             String[] projection = new String[] {
                                     ContactsContract.Contacts._ID,
                                     ContactsContract.Contacts.DISPLAY_NAME,
                                     ContactsContract.CommonDataKinds.Phone.NUMBER,
                                     ContactsContract.CommonDataKinds.StructuredPostal.FORMATTED_ADDRESS
                             };
+                            // Call ContentResolver.
                             Cursor cur = getContentResolver().query(uri, projection, null, null, null);
                             if (cur.getCount() > 0) {
                                 while (cur.moveToNext()) {
+                                    // If there is an address field.
                                     int colIndex = cur.getColumnIndex(
                                             ContactsContract.CommonDataKinds.StructuredPostal.FORMATTED_ADDRESS);
                                     if (colIndex != -1) {
+                                        // Put name and address as pair to mContactAddresses.
                                         String contactAddress = cur.getString(colIndex);
                                         String contactName = cur.getString(cur.getColumnIndex(ContactsContract.Contacts.DISPLAY_NAME));
                                         mContactAddresses.put(contactName, contactAddress);
@@ -145,7 +141,7 @@ public class MainActivity extends FragmentActivity {
         });
     }
 
-    private class ChooseContactDialog extends DialogFragment {
+    public class ChooseContactDialog extends DialogFragment {
         @Override
         public Dialog onCreateDialog(Bundle savedInstanceState) {
             AlertDialogWrapper.Builder builder = new AlertDialogWrapper.Builder(getActivity());
@@ -160,7 +156,7 @@ public class MainActivity extends FragmentActivity {
                     .setItems(list, new DialogInterface.OnClickListener() {
                         public void onClick(DialogInterface dialog, int which) {
                             String addr = (new ArrayList<String>(mContactAddresses.values())).get(which);
-                            mDestPos = getLocationFromAddress(addr);
+                            mDestPos = Utils.getLocationFromAddress(getApplicationContext(), addr);
                             if (mDestPos == null) {
                                 Toast.makeText(getApplicationContext(),
                                         "Không thể lấy tọa độ điểm đến",
@@ -172,42 +168,6 @@ public class MainActivity extends FragmentActivity {
                     });
             return builder.create();
         }
-    }
-
-    public LatLng getLocationFromAddress(String strAddress) {
-        Geocoder geocoder = new Geocoder(this, Locale.getDefault());
-        List<Address> address;
-        try {
-            address = geocoder.getFromLocationName(strAddress, 1);
-            if (address.size() > 0) {
-                Address location = address.get(0);
-                return new LatLng(location.getLatitude(), location.getLongitude());
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        return null;
-    }
-
-    private String getAddressFromLocation(Location loc) {
-        Geocoder geocoder = new Geocoder(this, Locale.getDefault());
-        List<Address> addresses = null;
-        try {
-            addresses = geocoder.getFromLocation(loc.getLatitude(), loc.getLongitude(), 1);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-
-        // Get the most accurate address.
-        Address address = addresses.get(0);
-        // Build address string.
-        StringBuilder sb = new StringBuilder();
-        for (int i = 0; i < address.getMaxAddressLineIndex(); i++) {
-            sb.append(address.getAddressLine(i)).append("\n");
-        }
-        sb.append(address.getCountryName());
-        String addressText = sb.toString();
-        return addressText;
     }
 
     private void openPlacePicker(int req) {
@@ -250,6 +210,7 @@ public class MainActivity extends FragmentActivity {
         }
 
         new ShortestRouteFinder(mStartPos, mDestPos, mMap).findShortestRoute();
+        // Center camera to start position.
         mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(mStartPos, 17));
         addMarkers();
     }
@@ -264,6 +225,4 @@ public class MainActivity extends FragmentActivity {
                     .title("Điểm đến"));
         }
     }
-
-
 }
