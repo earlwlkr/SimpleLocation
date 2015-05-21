@@ -5,5 +5,5 @@
     <string name="current_pos_label">Địa điểm tìm thấy lần cuối:</string>
     <string name="current_pos_loading">Đang tải dữ liệu...</string>
     <string name="title_activity_map_result">Kết quả</string>
-    <string name="action_settings">Settings</string>
+    <string name="action_settings">Cài đặt</string>
 </resources>
